@@ -10,12 +10,12 @@ Jackson Lucas
 
 ### System Name
 
-HackTrack
+Adaptive Study Planner
 
 ### System Goal
 
-HackTrack will help CPVC organizers estimate actual hackathon attendance by analyzing registration totals, historical attendance rates, optional pre-event confirmations, and recent changes in participant plans. At least one week before the event, it will produce an explainable attendance forecast with a likely range and recommend quantities of food, drinks, and swag. The system will update its forecast as new information becomes available, use only the minimum necessary participant data, protect privacy, and avoid excessive communication.
+The system helps students manage new assignments by collecting complete task details, analyzing deadlines, workload, available study time, and calendar conflicts, then creating or revising an evidence-based study plan and updating the calendar only with the student’s approval.
 
 ### Who Is Better Off When This Works?
 
-CPVC organizers will make more accurate and budget-conscious supply decisions, while registered students will have a better chance of receiving enough food, drinks, and swag at the hackathon.
+The student is better off because they receive a realistic, organized study plan that helps them manage deadlines and workload without missing required information or creating calendar conflicts.
