@@ -383,8 +383,11 @@
   document.querySelector("#sign-out").addEventListener("click", signOut);
   document.querySelector("#refresh-events").addEventListener("click", loadPublishedEvents);
   document.querySelectorAll("[data-filter]").forEach((button) => button.addEventListener("click", () => {
-    activeFilter = button.dataset.filter;
+    activeFilter = button.dataset.filter === "food" && activeFilter === "food" ? "all" : button.dataset.filter;
     document.querySelectorAll("[data-filter]").forEach((chip) => chip.setAttribute("aria-pressed", String(chip === button)));
+    if (activeFilter === "all") {
+      document.querySelectorAll("[data-filter]").forEach((chip) => chip.setAttribute("aria-pressed", String(chip.dataset.filter === "all")));
+    }
     renderEvents();
   }));
   window.addEventListener("hashchange", () => {
