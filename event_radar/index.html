@@ -27,6 +27,8 @@
       <form id="post-form">
         <label for="announcement">Announcement <span class="hint">1–2000 characters</span></label>
         <textarea id="announcement" name="announcement" maxlength="2000" required placeholder="Paste a club announcement here..."></textarea>
+        <label for="flyer">Flyer <span class="hint">Optional JPG or PNG, up to 5 MB</span></label>
+        <input id="flyer" name="flyer" type="file" accept="image/jpeg,image/png">
         <button type="submit">Send for review</button>
       </form>
       <div id="post-result" class="result" hidden>

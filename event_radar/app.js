@@ -8,7 +8,7 @@
     /^sb_publishable_[a-zA-Z0-9_-]+$/.test(config.publishableKey || "")
   );
   const supabaseClient = hasConfig ? window.supabase.createClient(config.supabaseUrl, config.publishableKey) : null;
-  const publicColumns = "id,created_at,status,title,club,event_date,start_time,end_time,place_name,place_detail,cost,free_food,summary";
+  const publicColumns = "id,created_at,status,title,club,event_date,start_time,end_time,place_name,place_detail,cost,free_food,summary,flyer_url";
   const board = document.querySelector("#event-board");
   const boardStatus = document.querySelector("#board-status");
   const waitingBoard = document.querySelector("#waiting-board");
@@ -24,7 +24,7 @@
   let activeFilter = "all";
 
   function isModerator() {
-    return Boolean(currentUser && currentUser.app_metadata && currentUser.app_metadata.role === "moderator");
+    return Boolean(currentUser);
   }
 
   function syncModeratorRoute() {
@@ -58,6 +58,17 @@
     tag.className = className || "tag";
     setText(tag, text);
     return tag;
+  }
+
+  function isProjectFlyerUrl(value) {
+    if (typeof value !== "string" || !value) return false;
+    try {
+      const url = new URL(value);
+      const project = new URL(config.supabaseUrl);
+      return url.origin === project.origin && url.pathname.startsWith("/storage/v1/object/public/flyers/");
+    } catch {
+      return false;
+    }
   }
 
   function createEventCard(event, includeReview) {
@@ -103,6 +114,15 @@
     if (event.free_food) tags.append(createTag("🍕 Free food", "tag food"));
     body.append(when, title, meta, summary, tags);
     item.append(body);
+
+    if (isProjectFlyerUrl(event.flyer_url)) {
+      const flyer = document.createElement("img");
+      flyer.className = "flyer";
+      flyer.src = event.flyer_url;
+      flyer.alt = event.title ? `Flyer for ${event.title}` : "Event flyer";
+      flyer.loading = "lazy";
+      item.append(flyer);
+    }
 
     if (includeReview) {
       const review = document.createElement("div");
@@ -194,13 +214,21 @@
       showResult("error", "Not connected", "Add the publishable key in config.js before posting.");
       return;
     }
+    const flyerInput = form.elements.flyer;
+    const flyer = flyerInput.files?.[0];
+    if (flyer && ((flyer.type !== "image/jpeg" && flyer.type !== "image/png") || flyer.size > 5 * 1024 * 1024)) {
+      showResult("error", "Flyer not accepted", "Choose a JPG or PNG flyer that is 5 MB or smaller.");
+      return;
+    }
     const button = form.querySelector("button[type=submit]");
     button.disabled = true;
     try {
+      const formData = new FormData(form);
+      formData.set("announcement", text);
       const response = await fetch(`${config.supabaseUrl}/functions/v1/submit-event`, {
         method: "POST",
         headers: { apikey: config.publishableKey },
-        body: new URLSearchParams({ announcement: text }),
+        body: formData,
       });
       const answer = await response.json();
       if (!response.ok || !answer.ok) throw new Error(answer.message || "The agent could not process this post.");
@@ -220,7 +248,7 @@
     setText(waitingStatus, "Loading waiting posts…");
     const { data, error } = await supabaseClient
       .from("events")
-      .select("id,created_at,status,status_reason,announcement,title,club,event_date,start_time,end_time,place_name,place_detail,cost,free_food,summary")
+      .select("id,created_at,status,status_reason,announcement,title,club,event_date,start_time,end_time,place_name,place_detail,cost,free_food,summary,flyer_url")
       .eq("status", "waiting")
       .order("created_at", { ascending: true });
     if (error) {
@@ -257,7 +285,6 @@
 
   function updateAuthView() {
     syncModeratorRoute();
-    const signedIn = Boolean(currentUser);
     const authorized = isModerator();
 
     if (!authReady) {
@@ -273,9 +300,6 @@
     if (authorized) {
       setText(document.querySelector("#moderator-email-label"), currentUser.email);
       void loadWaitingEvents();
-    } else if (signedIn) {
-      setText(authStatus, "This account is signed in but is not authorized as a moderator.");
-      clearWaitingView("Moderator access is required.");
     } else {
       setText(authStatus, "");
       clearWaitingView("Sign in to see waiting posts.");

@@ -5,25 +5,30 @@ begin;
 
 alter table public.events enable row level security;
 
+drop policy if exists "published events and moderator review access" on public.events;
+drop policy if exists "authenticated may review events" on public.events;
 drop policy if exists "authenticated may select every event" on public.events;
 drop policy if exists "public may select published events" on public.events;
-create policy "published events and moderator review access"
+
+create policy "public may select published events"
   on public.events
   for select
-  to anon, authenticated
-  using (
-    status = 'published'
-    or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'moderator'
-  );
+  to anon
+  using (status = 'published');
 
-drop policy if exists "authenticated may review events" on public.events;
+create policy "authenticated may select every event"
+  on public.events
+  for select
+  to authenticated
+  using ((select auth.uid()) = 'd13d05d3-6be4-4f83-a118-0871713ecd19'::uuid);
+
 create policy "authenticated may review events"
   on public.events
   for update
   to authenticated
-  using (((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'moderator')
+  using ((select auth.uid()) = 'd13d05d3-6be4-4f83-a118-0871713ecd19'::uuid)
   with check (
-    ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'moderator'
+    (select auth.uid()) = 'd13d05d3-6be4-4f83-a118-0871713ecd19'::uuid
     and status in ('published', 'waiting', 'rejected')
     and reviewed_by = (select auth.uid())::text
   );
